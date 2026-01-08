@@ -196,9 +196,6 @@ def view_code_test_expander():
         st.write("https://youtu.be/4qE3q3tgSPI")
         st.code("https://youtu.be/4qE3q3tgSPI")
         st.code("yt-dlp -F https://youtu.be/4qE3q3tgSPI")
-        st.write("\nOther")
-        st.code("source venv/bin/activate")
-        st.code("streamlit run main.py")
 
 
 def view_tutorial_expander():
