@@ -39,12 +39,13 @@ streamlit or nicegui
 
     python -m venv venv
 > Activate Virtual Environment
-- Linux
-    `source venv/bin/activate`
 
- - Windows
-    `venv\Scripts\Activate.ps1`
-
+```
+source venv/bin/activate 
+```
+```
+venv\Scripts\Activate.ps1
+```
 
 > run streamlit
 
