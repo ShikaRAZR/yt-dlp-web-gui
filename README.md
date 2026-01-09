@@ -30,23 +30,3 @@ Web GUI interface for yt-dlp to download videos, audio, images
 ffmpeg
 yt-dlp
 streamlit or nicegui
-
-## Testing
-
-
-    python --version
-> Make Virtual Environment
-
-    python -m venv venv
-> Activate Virtual Environment
-
-```
-source venv/bin/activate 
-```
-```
-venv\Scripts\Activate.ps1
-```
-
-> run streamlit
-
-    streamlit run main.py

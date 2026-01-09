@@ -220,7 +220,7 @@ def view_tutorial_expander():
         audio_codec_container_table = pd.DataFrame(
             {
                 "Audio Codec": ["mp4a (AAC)","opus","ac-3 (Audio Coding 3)", "ec-3 (Enhanced AC-3/E-AC-3)"],
-                "Container Codec": ["m4a (audio only)","webm","mp4",""]
+                "Containers": ["m4a (audio only)","webm","mp4",""]
             }
         )
         st.table(audio_codec_container_table.set_index(audio_codec_container_table.columns[0])) # Sets first column as index column
@@ -232,50 +232,6 @@ if __name__ == "__main__":
     main()
 
 
-
-def notes():
-    '''
-    Notes
-
-    https://github.com/imageio/imageio-ffmpeg
-    https://github.com/yt-dlp/yt-dlp/tree/master
-
-    yt-dlp -F https://youtu.be/ezOCrcKukEE Song Wiblotu - DYSFUNCTIONAL
-    yt-dlp -F https://youtu.be/4qE3q3tgSPI Video And They Shall Know No Fear | Secret Level EP: 05 | Warhammer 40K
-
-    source venv/bin/activate
-
-
-
-
-
-    streamlit run main.py
-    https://docs.streamlit.io/develop/api-reference
-    https://ploomber.io/blog/streamlit_exe/
-    https://discuss.streamlit.io/t/hide-row-indices-when-displaying-a-dataframe-in-streamlit-v1-16-0/35296 # Sets first column as index column "st.dataframe(df.set_index(df.columns[0]))"
-    You can use these icons in streamlit segmented control input:
-    https://fonts.google.com/icons
-
-
-
-
-
-    ffmpeg -i input.mp4 -c:v libx265 -crf 20 -preset slow -c:a copy output.mp4
-    input file: -i
-    video codec: -c:v
-    quality (0-51, recommend 18): -crf
-    process time (most setting don't affect quality): -preset
-        ultrafast
-        superfast
-        veryfast
-        faster
-        fast
-        medium (default)
-        slow
-        slower
-        veryslow
-    audio codec: -c:a
-    '''
 
 
 def useless():
