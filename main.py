@@ -4,15 +4,16 @@ from yt_dlp import YoutubeDL
 import imageio_ffmpeg as ffmpeg
 import importlib.metadata
 import pandas as pd
+from pathlib import Path
 
 # Web GUI yt-dlp
 def main():
-    view_code_test_expander()
     view_tutorial_expander()
 
-    st.write("## Video Downloader")
+    st.write("## Media Downloader")
     version = importlib.metadata.version("yt-dlp")
     print("yt-dlp version:", version)
+    print("Current directory:", Path.cwd())
     st.write("yt-dlp version:", version)
     st.write("---")
 
@@ -73,19 +74,21 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
     st.write("URL Valid? ", url_input)
     st.badge(str(is_valid), color=color)
     
+    download_dir = Path.home()  / "Downloads"
+    st.write(download_dir)
     with st.spinner("Processing..."):
         # Default
         if (is_valid and encoding_config_selection==0):
             if(media_config_option==0):
-                download_media(url_input, ydl_opts_best_audio_mka())
+                download_media(url_input, ydl_opts_best_audio_mka(download_dir))
                 st.success("Audio (Default) Downloaded!")
     
             if (media_config_option==1):
-                download_media(url_input, ydl_opts_best_video_mkv())
+                download_media(url_input, ydl_opts_best_video_mkv(download_dir))
                 st.success("Video (Default) Downloaded!")
 
             if (media_config_option==2):
-                download_media(url_input, ydl_opts_thumbnail())
+                download_media(url_input, ydl_opts_thumbnail(download_dir))
                 st.success("Thumbnail (Default) Downloaded!")
         
         # Remux
@@ -115,17 +118,17 @@ def download_media(url, ydl_opts):
     with YoutubeDL(ydl_opts) as ydl:
         ydl.download(url)
 
-def ydl_opts_best_audio_mka():
+def ydl_opts_best_audio_mka(download_dir):
     # Python dictionary config for default youtube audio download
     output = {
-        "format": "bestaudio/best",                 # Download best quality (audio)
-        "outtmpl": "%(title).80s.mka",              # File name and extension
+        "format": "bestaudio",                 # Download best quality (audio)
+        "outtmpl": str(download_dir / "%(title).80s.%(ext)s"),              # File name and extension
+        "postprocessors": [{
+            "key": "FFmpegVideoRemuxer",
+            "preferedformat": "mka",
+        }],
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
-        # 'postprocessors': [{
-            # 'key': 'FFmpegExtractAudio',
-            # 'preferredcodec': 'opus',   # Prefer Opus (doesnt work sometimes)
-        # }],
         "quiet": False,                             # Show progress
         "progress_hooks": [
             lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
@@ -133,14 +136,18 @@ def ydl_opts_best_audio_mka():
     }
     return output
 
-def ydl_opts_best_video_mkv():
+def ydl_opts_best_video_mkv(download_dir):
     # Python dictionary config for default youtube video download
     output = {
         "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
-        "outtmpl": "%(title).80s.%(ext)s",          # File name and extension
+        "outtmpl": str(download_dir / "%(title).80s.%(ext)s"),          # File name and extension
+        "postprocessors": [{
+            "key": "FFmpegVideoRemuxer",
+            "preferedformat": "mkv",
+        }],
+        "merge_output_format": "mkv",               # Container format
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
-        "merge_output_format": "mkv",               # Container format
         "quiet": False,                             # Show progress
         "progress_hooks": [
             lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
@@ -148,12 +155,12 @@ def ydl_opts_best_video_mkv():
     }
     return output
 
-def ydl_opts_thumbnail():
+def ydl_opts_thumbnail(download_dir):
     # Python dictionary config for default youtube thumbnail download
     output = {
         "skip_download": True,                      # Don't download the video
         "writethumbnail": True,                     # Download thumbnail
-        "outtmpl": "%(title).80s.%(ext)s",          # File name and extension
+        "outtmpl": str(download_dir / "%(title).80s.%(ext)s"),          # File name and extension
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
@@ -175,27 +182,20 @@ def view_media_codec_list(url):
         data_list = pd.DataFrame([{
             "format_id": f['format_id'],
             "ext": f['ext'],
-            "height": f.get('resolution'),
+            "resolution": f.get('resolution'),
             "fps": f.get('fps'),
             "vcodec": f['vcodec'],
             "acodec": f['acodec'],
+            "tbr": f.get('tbr'),
+            "filesize_MB": (
+                round(f["filesize"] / 1024 / 1024, 2)
+                if f.get("filesize") else None
+            ),
         } for f in formats])
         st.subheader("Available Formats")
         st.table(data_list.set_index(data_list.columns[0])) # Sets first column as index column
         st.success("Info Obtained")
         return data_list
-
-def view_code_test_expander():
-    # Test
-    with st.expander("Code Testing"):
-        st.write("\nSong")
-        st.write("https://youtu.be/ezOCrcKukEE")
-        st.code("https://youtu.be/ezOCrcKukEE")
-        st.code("yt-dlp -F https://youtu.be/ezOCrcKukEE")
-        st.write("\nVideo")
-        st.write("https://youtu.be/4qE3q3tgSPI")
-        st.code("https://youtu.be/4qE3q3tgSPI")
-        st.code("yt-dlp -F https://youtu.be/4qE3q3tgSPI")
 
 
 def view_tutorial_expander():
@@ -235,7 +235,6 @@ if __name__ == "__main__":
 
 
 def useless():
-    
     # panda is used instead of tabulate because i need to interact with the info
     '''
     def view_media_codec_list(url):

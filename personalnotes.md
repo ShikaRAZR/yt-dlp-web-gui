@@ -105,7 +105,7 @@ streamlit run main.py
         ```
         pyinstaller --onefile --additional-hooks-dir=./hooks run.py --clean
         ```
-    2. Edit Spec file:
+    2. Edit Spec file (run.spec):
         - Add from ... import...
         ```
         from PyInstaller.utils.hooks import collect_all
