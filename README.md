@@ -26,7 +26,12 @@ Web GUI interface for yt-dlp to download videos, audio, images
 - Twitter, Instagram, Twitch
 - Youtube community posts
 
+
+## Need to Fix
+- ask for cookies
+- cancel download
+
 ## Modules
 ffmpeg
 yt-dlp
-streamlit or nicegui
+streamlit

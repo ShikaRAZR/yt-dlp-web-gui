@@ -6,6 +6,9 @@ import importlib.metadata
 import pandas as pd
 from pathlib import Path
 
+import subprocess
+import sys
+
 # Web GUI yt-dlp
 def main():
     view_tutorial_expander()
@@ -15,6 +18,8 @@ def main():
     print("yt-dlp version:", version)
     print("Current directory:", Path.cwd())
     st.write("yt-dlp version:", version)
+    if st.button("Update"):
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"])
     st.write("---")
 
     # Options for download mode
@@ -22,7 +27,8 @@ def main():
         0: "Default",
         1: "Remux",
         2: "Re-encode",
-        3: "Batch(Default)"
+        3: "Batch(Default)",
+        4: "Other"
     }
     encoding_config_selection = st.segmented_control(
         "Encoding Setting",
@@ -31,14 +37,19 @@ def main():
         selection_mode="single",
         default=0
     )
+
     # Options for the type of media you want to download
     media_config_map = {
-        0: "Download Audio",
-        1: "Download Video",
-        2: "Download Thumbnail",
-    }
+            0: "Audio",
+            1: "Video",
+        }
+    if (encoding_config_selection == 4):
+        media_config_map = {
+            0: "Youtube Thumbnail",
+            1: "Twitter"
+        }
     media_config_option = st.selectbox(
-        "Choose Media Type:",
+        "Choose Media Download Type:",
         options=media_config_map.keys(),
         format_func=lambda option: media_config_map[option],
     )
@@ -46,8 +57,8 @@ def main():
     url_input = st.text_input("Input URL")
 
     # Test
-    st.write("Encoding: ", encoding_config_selection)
-    st.write("Media: ", media_config_option)
+    print("Encoding: ", encoding_config_selection)
+    print("Media: ", media_config_option)
 
     # Button to continue or download
     button_name = ""
@@ -55,6 +66,9 @@ def main():
         button_name = "Download"
     if(encoding_config_selection==1):
         button_name = "Continue"
+
+    if(encoding_config_selection==4):
+        button_name = "Download"
 
     if (button_name != ""):
         if st.button(button_name):
@@ -74,27 +88,34 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
     st.write("URL Valid? ", url_input)
     st.badge(str(is_valid), color=color)
     
-    download_dir = Path.home()  / "Downloads"
-    st.write(download_dir)
+    download_directory = Path.home()  / "Downloads"
     with st.spinner("Processing..."):
         # Default
         if (is_valid and encoding_config_selection==0):
             if(media_config_option==0):
-                download_media(url_input, ydl_opts_best_audio_mka(download_dir))
-                st.success("Audio (Default) Downloaded!")
+                download_media(url_input, ydl_opts_best_audio_mka(download_directory))
+                st.success("(Default) Audio Downloaded!")
+                st.write(download_directory)
     
             if (media_config_option==1):
-                download_media(url_input, ydl_opts_best_video_mkv(download_dir))
-                st.success("Video (Default) Downloaded!")
-
-            if (media_config_option==2):
-                download_media(url_input, ydl_opts_thumbnail(download_dir))
-                st.success("Thumbnail (Default) Downloaded!")
+                download_media(url_input, ydl_opts_best_video_audio_mkv(download_directory))
+                st.success("(Default) Video Downloaded!")
+                st.write(download_directory)
+        
+        # Other
+        if (is_valid and encoding_config_selection==4):
+            if (media_config_option==0):
+                download_media(url_input, ydl_opts_thumbnail(download_directory))
+                st.success("(Other) Thumbnail Downloaded!")
+                st.write(download_directory)
+            if (media_config_option==1):
+                download_media(url_input, ydl_opts_twitter(download_directory))
+                st.success("(Other) Twitter Media Downloaded!")
+                st.write(download_directory)
         
         # Remux
         if (is_valid and encoding_config_selection==1):
-            if(media_config_option==0):
-                download_media_remux(url_input)
+            download_media_remux(url_input)
             
 
 # Helpers with user input
@@ -118,11 +139,11 @@ def download_media(url, ydl_opts):
     with YoutubeDL(ydl_opts) as ydl:
         ydl.download(url)
 
-def ydl_opts_best_audio_mka(download_dir):
+def ydl_opts_best_audio_mka(download_directory):
     # Python dictionary config for default youtube audio download
     output = {
         "format": "bestaudio",                 # Download best quality (audio)
-        "outtmpl": str(download_dir / "%(title).80s.%(ext)s"),              # File name and extension
+        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),              # File name and extension
         "postprocessors": [{
             "key": "FFmpegVideoRemuxer",
             "preferedformat": "mka",
@@ -136,11 +157,11 @@ def ydl_opts_best_audio_mka(download_dir):
     }
     return output
 
-def ydl_opts_best_video_mkv(download_dir):
+def ydl_opts_best_video_audio_mkv(download_directory):
     # Python dictionary config for default youtube video download
     output = {
         "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
-        "outtmpl": str(download_dir / "%(title).80s.%(ext)s"),          # File name and extension
+        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),          # File name and extension
         "postprocessors": [{
             "key": "FFmpegVideoRemuxer",
             "preferedformat": "mkv",
@@ -155,12 +176,12 @@ def ydl_opts_best_video_mkv(download_dir):
     }
     return output
 
-def ydl_opts_thumbnail(download_dir):
+def ydl_opts_thumbnail(download_directory):
     # Python dictionary config for default youtube thumbnail download
     output = {
         "skip_download": True,                      # Don't download the video
         "writethumbnail": True,                     # Download thumbnail
-        "outtmpl": str(download_dir / "%(title).80s.%(ext)s"),          # File name and extension
+        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),          # File name and extension
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
@@ -170,7 +191,18 @@ def ydl_opts_thumbnail(download_dir):
     }
     return output
 
-
+def ydl_opts_twitter(download_directory):
+    # Python dictionary config for default youtube video download
+    output = {
+        "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
+        "outtmpl": str(download_directory / "%(uploader)s - %(id)s - %(media_id)s.%(ext)s"), # File name and extension
+        "noplaylist": True,                         # Only download single video
+        "quiet": False,                             # Show progress
+        "progress_hooks": [
+            lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
+        ]
+    }
+    return output
 
 # Display Helpers
 def view_media_codec_list(url):
