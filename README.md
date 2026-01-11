@@ -23,13 +23,15 @@ Web GUI interface for yt-dlp to download videos, audio, images
 - Exit
 
 ## Might work on supporting
-- Twitter, Instagram, Twitch
+- Twitter, Instagram, Twitch, Reddit
 - Youtube community posts
 
 
-## Need to Fix
-- ask for cookies
+## Bugs to Fix
+- ask for cookies (config)
+- Personal Download location (config)
 - cancel download
+- ffmpeg not installed (twitter)
 
 ## Modules
 ffmpeg

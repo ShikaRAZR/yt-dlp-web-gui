@@ -27,8 +27,9 @@ def main():
         0: "Default",
         1: "Remux",
         2: "Re-encode",
-        3: "Batch(Default)",
-        4: "Other"
+        3: "Thumbnail",
+        4: "Batch(Default)",
+        5: "Other"
     }
     encoding_config_selection = st.segmented_control(
         "Encoding Setting",
@@ -39,14 +40,25 @@ def main():
     )
 
     # Options for the type of media you want to download
-    media_config_map = {
+    media_config_map = {}
+    if (encoding_config_selection==0 or encoding_config_selection==1 or encoding_config_selection==2):
+        media_config_map = {
             0: "Audio",
             1: "Video",
         }
-    if (encoding_config_selection == 4):
+    if (encoding_config_selection==3):
         media_config_map = {
-            0: "Youtube Thumbnail",
-            1: "Twitter"
+            0: "Youtube Thumbnail"
+        }
+    if (encoding_config_selection==4):
+        media_config_map = {
+            0: "Audio",
+            1: "Video",
+            2: "Youtube Thumbnail"
+        }
+    if (encoding_config_selection==5):
+        media_config_map = {
+            0: "Twitter (Video)"
         }
     media_config_option = st.selectbox(
         "Choose Media Download Type:",
@@ -57,18 +69,15 @@ def main():
     url_input = st.text_input("Input URL")
 
     # Test
-    print("Encoding: ", encoding_config_selection)
-    print("Media: ", media_config_option)
+    print("encoding_config_selection: ", encoding_config_selection)
+    print("media_config_option: ", media_config_option)
 
     # Button to continue or download
     button_name = ""
-    if(encoding_config_selection==0):
+    if(encoding_config_selection==0 or encoding_config_selection==3 or encoding_config_selection==5):
         button_name = "Download"
     if(encoding_config_selection==1):
         button_name = "Continue"
-
-    if(encoding_config_selection==4):
-        button_name = "Download"
 
     if (button_name != ""):
         if st.button(button_name):
@@ -80,42 +89,54 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
     # Depending on user input downloads default audio and video files or gives more options when remux/re-encode/batch are chosen
     st.write("---")
     with st.spinner("Processing..."):
-        is_valid = is_supported_by_ytdlp(url_input)
+        is_valid_url = is_supported_by_ytdlp(url_input)
     
-    color = "red"
-    if (is_valid):
-        color = "green"
-    st.write("URL Valid? ", url_input)
-    st.badge(str(is_valid), color=color)
+    st.write("URL: ", url_input)
+    st.write("is_valid_url: ", is_valid_url)
     
+    # Ends function if invalid url
+    if (is_valid_url == 0):
+        st.badge("Invalid URL", color="red")
+        return
+
     download_directory = Path.home()  / "Downloads"
     with st.spinner("Processing..."):
-        # Default
-        if (is_valid and encoding_config_selection==0):
-            if(media_config_option==0):
+        if(is_valid_url==1):
+            # 0 Default Options
+            if (encoding_config_selection==0 and media_config_option==0):
                 download_media(url_input, ydl_opts_best_audio_mka(download_directory))
                 st.success("(Default) Audio Downloaded!")
-                st.write(download_directory)
-    
+                st.write(download_directory)  
             if (media_config_option==1):
                 download_media(url_input, ydl_opts_best_video_audio_mkv(download_directory))
                 st.success("(Default) Video Downloaded!")
                 st.write(download_directory)
-        
-        # Other
-        if (is_valid and encoding_config_selection==4):
-            if (media_config_option==0):
+
+            # 1 Remux Options
+            if(encoding_config_selection==1 and media_config_option==0):
+                download_media_remux(url_input)
+            if(encoding_config_selection==1 and media_config_option==1):
+                download_media_remux(url_input)
+
+            # 3 Thumbnail Option   
+            if (encoding_config_selection==3 and media_config_option==0):
                 download_media(url_input, ydl_opts_thumbnail(download_directory))
-                st.success("(Other) Thumbnail Downloaded!")
+                st.success("Thumbnail Downloaded!")
                 st.write(download_directory)
-            if (media_config_option==1):
+        
+        # Other Options
+        if (is_valid_url==2):
+            if (encoding_config_selection==5 and media_config_option==0):
+                download_media_remux(url_input)
                 download_media(url_input, ydl_opts_twitter(download_directory))
                 st.success("(Other) Twitter Media Downloaded!")
                 st.write(download_directory)
-        
-        # Remux
-        if (is_valid and encoding_config_selection==1):
-            download_media_remux(url_input)
+
+        # Notify User Error
+        if ((encoding_config_selection==0 or encoding_config_selection==1 or encoding_config_selection==2 or encoding_config_selection==3 or encoding_config_selection==4) and is_valid_url != 1):
+            st.badge("Not a Youtube URL", color="red") 
+        if (encoding_config_selection==5 and is_valid_url != 2):
+            st.badge("Not a Twitter URL", color="red")
             
 
 # Helpers with user input
@@ -125,14 +146,20 @@ def download_media_remux(url):
 
 
 # Helpers
-def is_supported_by_ytdlp(url: str) -> bool:
+def is_supported_by_ytdlp(url: str):
     # Check if yt-dlp supports the URL
+    # Does not support = 0
+    # Youtube = 1
+    # Twitter = 2
     try:
         with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
             ydl.extract_info(url, download=False)
-        return True
+        if("youtube" in url or "youtu.be" in url):
+            return 1
+        if("twitter" in url or "x.com" in url):
+            return 2
     except yt_dlp.utils.DownloadError:
-        return False
+        return 0
 
 def download_media(url, ydl_opts):
     # download youtube media with configs
@@ -177,7 +204,7 @@ def ydl_opts_best_video_audio_mkv(download_directory):
     return output
 
 def ydl_opts_thumbnail(download_directory):
-    # Python dictionary config for default youtube thumbnail download
+    # Python dictionary config for youtube thumbnail download
     output = {
         "skip_download": True,                      # Don't download the video
         "writethumbnail": True,                     # Download thumbnail
@@ -192,11 +219,12 @@ def ydl_opts_thumbnail(download_directory):
     return output
 
 def ydl_opts_twitter(download_directory):
-    # Python dictionary config for default youtube video download
+    # Python dictionary config for twitter video download
     output = {
         "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
         "outtmpl": str(download_directory / "%(uploader)s - %(id)s - %(media_id)s.%(ext)s"), # File name and extension
         "noplaylist": True,                         # Only download single video
+        "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
         "progress_hooks": [
             lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
@@ -211,20 +239,40 @@ def view_media_codec_list(url):
     with YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)  # download=False like -F similar to calling "yt-dlp -F [url]"
         formats = info.get("formats", [])
-        data_list = pd.DataFrame([{
-            "format_id": f['format_id'],
-            "ext": f['ext'],
-            "resolution": f.get('resolution'),
-            "fps": f.get('fps'),
-            "vcodec": f['vcodec'],
-            "acodec": f['acodec'],
-            "tbr": f.get('tbr'),
-            "filesize_MB": (
-                round(f["filesize"] / 1024 / 1024, 2)
-                if f.get("filesize") else None
-            ),
-        } for f in formats])
+        url_type = ""
+        if ("you" in url):
+            url_type = "Youtube"
+            data_list = pd.DataFrame([{
+                "format_id": f['format_id'],
+                "ext": f['ext'],
+                "resolution": f.get('resolution'),
+                "fps": f.get('fps'),
+                "vcodec": f['vcodec'],
+                "acodec": f['acodec'],
+                "tbr": f.get('tbr'),
+                "filesize_MB": (
+                    round(f["filesize"] / 1024 / 1024, 2)
+                    if f.get("filesize") else None
+                ),
+            } for f in formats])
+
+        if ("x.com" in url or "twitter" in url):
+            url_type = "Twitter"
+            data_list = pd.DataFrame([{
+                "format_id": f['format_id'],
+                "ext": f['ext'],
+                "resolution": f.get('resolution'),
+                "vcodec": f.get('vcodec', "unknown"),
+                "acodec": f.get('acodec', "unknown"),
+                "tbr": f.get('tbr'),
+                "filesize_MB": (
+                    round(f["filesize"] / 1024 / 1024, 2)
+                    if f.get("filesize") else None
+                ),
+            } for f in formats])
+        
         st.subheader("Available Formats")
+        st.write(url_type + " URL")
         st.table(data_list.set_index(data_list.columns[0])) # Sets first column as index column
         st.success("Info Obtained")
         return data_list

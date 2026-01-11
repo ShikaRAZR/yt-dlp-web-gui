@@ -4,7 +4,7 @@ My personal notes about what I've learned while coding this project
 ## Links & References
 https://github.com/imageio/imageio-ffmpeg <br>
 https://github.com/yt-dlp/yt-dlp/tree/master <br>
-
+https://github.com/yt-dlp/yt-dlp/wiki/extractors <br>
 
 Streamlit Documentation https://docs.streamlit.io/develop/api-reference <br>
 Streamlet to exe file (blog) https://ploomber.io/blog/streamlit_exe/ <br>
@@ -47,7 +47,7 @@ Video And They Shall Know No Fear | Secret Level EP: 05 | Warhammer 40K
 yt-dlp -F https://youtu.be/4qE3q3tgSPI
 ```
 Twitter
-Cat
+Cat Side Eye
 ```
 https://x.com/TheCatsX/status/2008819645684531286?s=20
 ```
@@ -55,7 +55,18 @@ M200
 ```
 https://x.com/Kuroame_arc11/status/2008184883261460744?s=20
 ```
-> Test:
+Cat Racing
+```
+https://x.com/tatuya01/status/2009551729071927745
+``` 
+
+<br>
+
+---
+
+<br>
+
+> Version:
 ```
 python --version
 ```
@@ -76,6 +87,13 @@ venv\Scripts\Activate.ps1
 ```
 streamlit run main.py
 ```
+
+<br>
+
+---
+
+<br>
+
 >pyinstaller:
 - Reference: https://ploomber.io/blog/streamlit_exe/
 1. create a run.py that wraps the main() in main.py 
