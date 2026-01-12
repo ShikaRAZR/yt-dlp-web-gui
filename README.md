@@ -4,23 +4,38 @@ Web GUI interface for yt-dlp to download videos, audio, images
 ## Features
 - Download Audio
 - Download Video (Youtube)
+- Download with Remux (Audio)
+    - format ID for audio codex
+    - custom container
+- Download with Remux (Video)
+    - format ID for video codec
+    - format ID for audio codex
+    - custom container
+- Re-encode (Video)
+    - Video Codec
+    - Audio Codec
+    - Resolution
+    - Container
+- Re-encode (Audio)
+    - Audio Codec
+    - Container
 - Download Thumbnail (Only Youtube)
 - Batch Download (Music, Video, Thumbnail)
     - Numbering (Custom Prefix)
     - Range of videos in a playlist
-- Configs (Appears after sending link)
-    - Remux (less options) or  Re-encode
-        - Video Codec
-        - Audio Codec
-        - Video Quality
-        - Audio Quality
-        - Container (Music)
-        - Container (Video)
     - Default
         - best quality codecs in mkv, mka container
-    - Download Path
-- Update yt-dlp
+- Other
+    - Twitter
 - Exit
+
+
+## Side Features
+- Update yt-dlp
+- Change Download Path
+- Cancel Download
+- Cookies From: brave, chrome, chromium, edge, firefox, opera, safari, vivaldi, whale
+
 
 ## Might work on supporting
 - Twitter, Instagram, Twitch, Reddit
@@ -28,10 +43,10 @@ Web GUI interface for yt-dlp to download videos, audio, images
 
 
 ## Bugs to Fix
-- ask for cookies (config)
-- Personal Download location (config)
 - cancel download
-- ffmpeg not installed (twitter)
+- Personal Download location (config)
+- ask for cookies (config)
+- ~~ffmpeg not installed (other-twitter)~~
 
 ## Modules
 ffmpeg

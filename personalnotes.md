@@ -3,7 +3,7 @@ My personal notes about what I've learned while coding this project
 
 ## Links & References
 https://github.com/imageio/imageio-ffmpeg <br>
-https://github.com/yt-dlp/yt-dlp/tree/master <br>
+https://github.com/yt-dlp/yt-dlp <br>
 https://github.com/yt-dlp/yt-dlp/wiki/extractors <br>
 
 Streamlit Documentation https://docs.streamlit.io/develop/api-reference <br>
@@ -14,7 +14,8 @@ https://discuss.streamlit.io/t/hide-row-indices-when-displaying-a-dataframe-in-s
 
 You can use these icons in streamlit segmented control input: https://fonts.google.com/icons <br>
 
-
+https://youtu.be/gOMW_n2-2Mw Python lists, sets, and tuples explained  <br>
+https://youtu.be/EXIgjIBu4EU Learn Pandas in 30 Minutes - Python Pandas Tutorial  <br>
 
 ## FFMPEG Explained:
 ```
@@ -37,29 +38,50 @@ audio codec: -c:a
 
 
 ## Testing
-
+```
+yt-dlp -F 
+```
+```
+--write-thumbnail --skip-download
+```
+```
+--cookies-from-browser firefox
+```
+#### Youtube
 Song Wiblotu - DYSFUNCTIONAL
 ```
-yt-dlp -F https://youtu.be/ezOCrcKukEE
+https://youtu.be/ezOCrcKukEE
 ```
 Video And They Shall Know No Fear | Secret Level EP: 05 | Warhammer 40K
 ```
-yt-dlp -F https://youtu.be/4qE3q3tgSPI
+https://youtu.be/4qE3q3tgSPI
 ```
-Twitter
-Cat Side Eye
+
+#### Twitter
+Cat Side Eye (Video)
 ```
 https://x.com/TheCatsX/status/2008819645684531286?s=20
 ```
-M200
+M200 (GIF)
 ```
 https://x.com/Kuroame_arc11/status/2008184883261460744?s=20
 ```
-Cat Racing
+Saria (Image)
+```
+https://x.com/Guhc294127/status/2005237874116251780?s=20
+```
+Cat Racing (Multi Format Video)
 ```
 https://x.com/tatuya01/status/2009551729071927745
 ``` 
-
+NSFW Image (Account Required)
+```
+https://x.com/AlterKyon/status/1981183649967198266?s=20
+```
+NSFW Video (Account Required)
+```
+https://x.com/TrevoButEvil/status/2009743402758295798?s=20
+```
 <br>
 
 ---
