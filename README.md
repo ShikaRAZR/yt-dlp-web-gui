@@ -42,10 +42,10 @@ Web GUI interface for yt-dlp to download videos, audio, images
 - Youtube community posts
 
 
-## Bugs to Fix
-- cancel download
+## Features to Work On
+- ~~cancel download~~
 - Personal Download location (config)
-- ask for cookies (config)
+- ask for cookies (cookies dont work for chromium and video error downloading with cookies activated)
 - ~~ffmpeg not installed (other-twitter)~~
 
 ## Modules

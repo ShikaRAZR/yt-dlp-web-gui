@@ -9,6 +9,16 @@ from pathlib import Path
 import subprocess
 import sys
 
+# Global variables
+download_directory = Path.home()  / "Downloads"
+cookies = None
+
+# Simple progress bar
+progress_bar = st.progress(0)
+
+# Check if ytdlp download progress should be canceled
+cancel_flag = False
+
 # Web GUI yt-dlp
 def main():
     view_tutorial_expander()
@@ -21,10 +31,8 @@ def main():
     with column1:
         st.write("yt-dlp version:", version)
     with column2:
-        if st.button("Update"):
+        if st.button("Update", key="update_button"):
             subprocess.check_call([sys.executable, "-m", "pip", "install", "--upgrade", "yt-dlp"])
-    
-    download_directory = Path.home()  / "Downloads"
     st.write("Download Directory:", download_directory)
     st.write("---")
 
@@ -34,12 +42,16 @@ def main():
 
     # Option to use cookies
     on = st.toggle("Cookies from Browser?")
-    cookies_config_option = ""
+    global cookies
     if on:
         cookies_config_option = st.selectbox(
             "Choose Browser to Use Cookie From (Recommended to use throwaway account):",
             ("chrome","chromium","firefox","brave","edge","opera","safari","vivaldi","whale",)
         )
+        cookies = (cookies_config_option, )
+    else:
+        cookies = None
+
 
     # Options for download mode
     encoding_config_list = {
@@ -91,20 +103,85 @@ def main():
     print("encoding_config_selection: ", encoding_config_selection)
     print("media_config_option: ", media_config_option)
 
-    # Button to continue or download
-    button_name = ""
+    # Default, Thumbnail, Other
     if(encoding_config_selection==0 or encoding_config_selection==3 or encoding_config_selection==5):
-        button_name = "Download"
-    if(encoding_config_selection==1):
-        button_name = "Continue"
+        if st.button("Download", key="main_button"):
+            url_download_config(url_input, encoding_config_selection, media_config_option)
+    
+    # I hate session states
+    # Initialize variables that need sessions
+    if 'id_data_frame_session' not in st.session_state:
+        st.session_state['id_data_frame_session'] = pd.DataFrame()
+    if 'id_tuple_acodec_session' not in st.session_state:
+        st.session_state['id_tuple_acodec_session'] = ()
+    if 'id_tuple_vcodec_session' not in st.session_state:
+        st.session_state['id_tuple_vcodec_session'] = ()
+    if 'input_container_for_codecs' not in st.session_state:
+        st.session_state['input_container_for_codecs'] = ()
+    if 'id_acodec' not in st.session_state:
+        st.session_state['id_acodec'] = ""
+    if 'id_vcodec' not in st.session_state:
+        st.session_state['id_vcodec'] = ""
+    if 'container_type' not in st.session_state:
+        st.session_state['container_type'] = ""
+    # Remux session state menu
+    if (encoding_config_selection == 1):
+        # Button to check url and make a table of formats and fine list of ids for acodecs, vcodecs and containers
+        if st.button("Check URL", key="check_button"):
+            with st.spinner("Processing..."):
+                if (is_supported_by_ytdlp(url_input) != 1):
+                    st.badge("Invalid URL for Youtube or Cookies Required", color="red")
+                    return
+                check_media_remux(url_input, media_config_option)
+                print(st.session_state['id_tuple_acodec_session'])
+                print(st.session_state['id_tuple_vcodec_session'])
+        if not st.session_state['id_data_frame_session'].empty:
+            st.table(st.session_state['id_data_frame_session'])
+        # selectboxes for ids of acodecs, vcodecs and containers
+        ids_with_acodec_box = st.selectbox(
+            "Choose format_ID with an ACODEC stream to remux:",
+            options=st.session_state['id_tuple_acodec_session'],
+            key=("remux_acodec_box"),
+        )
+        st.session_state['id_acodec'] = ids_with_acodec_box
+        if (media_config_option==1):
+            ids_with_vcodec_box = st.selectbox(
+                "Choose format_ID with a VCODEC stream to remux:",
+                options=st.session_state['id_tuple_vcodec_session'],
+                key=("remux_vcodec_box"),
+            )
+            st.session_state['id_vcodec'] = ids_with_vcodec_box
+        codec_container_box = st.selectbox(
+            "Choose CONTAINER compatible with selected codecs",
+            options=st.session_state['input_container_for_codecs'],
+            key=("remux_container_box"),
+        )
+        st.session_state['container_type'] = codec_container_box
+        # download using configuration from check url button, then resetting states
+        if st.button("Download", key="main_button"):
+            url_download_config(url_input, encoding_config_selection, media_config_option)
+            st.session_state['id_data_frame_session'] = pd.DataFrame()
+            st.session_state['id_tuple_acodec_session'] = ()
+            st.session_state['id_tuple_vcodec_session'] = ()
+            st.session_state['input_container_for_codecs'] = ()
+            st.session_state['id_acodec'] = ""
+            st.session_state['id_vcodec'] = ""
+            st.session_state['container_type'] = ""
 
-    if (button_name != ""):
-        if st.button(button_name):
-            url_download_config(url_input, encoding_config_selection, media_config_option, download_directory)
+    else:
+        st.session_state['id_data_frame_session'] = pd.DataFrame()
+        st.session_state['id_tuple_acodec_session'] = ()
+        st.session_state['id_tuple_vcodec_session'] = ()
+        st.session_state['input_container_for_codecs'] = ()
+        st.session_state['id_acodec'] = ""
+        st.session_state['id_vcodec'] = ""
+        st.session_state['container_type'] = ""
+    
+        
         
 
-
-def url_download_config(url_input, encoding_config_selection, media_config_option, download_directory):
+# Helper With User Input
+def url_download_config(url_input, encoding_config_selection, media_config_option):
     # Depending on user input downloads default audio and video files or gives more options when remux/re-encode/batch are chosen
     st.write("---")
     with st.spinner("Processing..."):
@@ -115,28 +192,31 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
     
     # Ends function if invalid url
     if (is_valid_url == 0):
-        st.badge("Invalid URL", color="red")
+        st.badge("Invalid URL or Cookies Required", color="red")
         return
 
     with st.spinner("Processing..."):
         if(is_valid_url==1):
             # 0 Default Options
             if (encoding_config_selection==0 and media_config_option==0):
-                download_media(url_input, ydl_opts_best_audio_mka(download_directory))
+                download_media(url_input, ydl_opts_best_audio_mka())
                 st.success("(Default) Audio Downloaded!")
                 st.write(download_directory)
             if (encoding_config_selection==0 and media_config_option==1):
-                download_media(url_input, ydl_opts_best_video_audio_mkv(download_directory))
+                download_media(url_input, ydl_opts_best_video_audio_mkv())
                 st.success("(Default) Video Downloaded!")
                 st.write(download_directory)
 
             # 1 Remux Options
             if(encoding_config_selection==1):
-                download_media_remux(url_input, media_config_option, download_directory)
+                if (media_config_option==0):
+                    download_media(url_input, ydl_opts_audio_remux(st.session_state['id_acodec'], st.session_state['container_type']))
+                if (media_config_option==1):
+                    download_media(url_input, ydl_opts_video_audio_remux(st.session_state['id_vcodec'], st.session_state['id_acodec'], st.session_state['container_type']))   
 
             # 3 Thumbnail Option   
             if (encoding_config_selection==3 and media_config_option==0):
-                download_media(url_input, ydl_opts_thumbnail(download_directory))
+                download_media(url_input, ydl_opts_thumbnail())
                 st.success("Thumbnail Downloaded!")
                 st.write(download_directory)
         
@@ -144,7 +224,7 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
         if (is_valid_url==2):
             if (encoding_config_selection==5 and media_config_option==0):
                 view_media_codec_list(url_input)
-                download_media(url_input, ydl_opts_twitter_video_audio(download_directory))
+                download_media(url_input, ydl_opts_twitter_video_audio())
                 st.success("(Other) Twitter Media Downloaded!")
                 st.write(download_directory)
 
@@ -155,42 +235,38 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
             st.badge("Not a Twitter URL", color="red")
             
 
-# Helpers with user input
-def download_media_remux(url, media_config_option, download_directory):
+def check_media_remux(url, media_config_option):
     # data_list is a Pandas DataFrame, a type of 2 dimensional data structure with rows and columns
     data_list = view_media_codec_list(url)
-    format_id_tuple_with_acodec = () # data type is a tuple
+
+    new_data = pd.DataFrame()
+    for row in data_list.itertuples(index=False):
+        if ((row.acodec != "none" and row.vcodec == "none") or (row.vcodec != "none" and row.acodec == "none")):
+            new_data = pd.concat(
+                [new_data, pd.DataFrame([row._asdict()])],
+                ignore_index=True
+        )
+    st.session_state['id_data_frame_session'] = new_data
+    #st.session_state['id_data_frame_session'] = (data_list.set_index(data_list.columns[0]))# Sets first column as index column
 
     # Remux Audio
+    format_id_tuple_with_acodec = ()
     # Intertuples is an iterator (not an array or list but an object itself using its own methods or for loop to go through) that makes each row a tuple
     for row in data_list.itertuples(): # each row is a tuple containing format_id, acodec, vcodec and whatever we chose to add to the DataFrame for a single media
-        if (row.acodec != "none"): # in this case we checking if this row (media) has an acodec 
-            format_id_tuple_with_acodec = format_id_tuple_with_acodec + (int(row.format_id),) # adding the id of the row that has an acodec but as an int instead of string for sorting
+        if (row.acodec != "none" and row.vcodec == "none"): # in this case we checking if this row (media) has an acodec 
+            format_id_tuple_with_acodec = format_id_tuple_with_acodec + (row.format_id,) # adding the id of the row that has an acodec but as an int instead of string for sorting
             print("id:"+row.format_id +" acodec:"+row.acodec)
-    
-    format_id_with_acodec = st.selectbox(
-        "Choose format_ID for an acodec to remux:",
-        options=tuple(sorted(format_id_tuple_with_acodec)),
-    )
-    st.write(format_id_with_acodec)
+    st.session_state['id_tuple_acodec_session'] = tuple(sorted(format_id_tuple_with_acodec))
+    st.session_state['input_container_for_codecs'] = ("mp3", "mka", "oga", "m4a",)
     # Remux Video
+    format_id_tuple_with_vcodec = ()
+    for row in data_list.itertuples():
+        if (row.vcodec != "none" and row.acodec == "none"):
+            format_id_tuple_with_vcodec = format_id_tuple_with_vcodec + (row.format_id,)
+            print("id:"+row.format_id +" vcodec:"+row.vcodec)
+    st.session_state['id_tuple_vcodec_session'] = tuple(sorted(format_id_tuple_with_vcodec))
     if (media_config_option==1):
-        format_id_tuple_with_vcodec = ()
-        for row in data_list.itertuples():
-            if (row.vcodec != "none"):
-                format_id_tuple_with_vcodec = format_id_tuple_with_vcodec + (int(row.format_id),)
-                print("id:"+row.format_id +" vcodec:"+row.vcodec)
-        format_id_with_vcodec = st.selectbox(
-            "Choose format_ID for an acodec to remux:",
-            options=tuple(sorted(format_id_tuple_with_vcodec))
-        )
-        st.write(format_id_with_vcodec)
-    if st.button("Download"):
-        print("DownloadTest")
-        # download_media(url, ydl_opts_audio_remux(download_directory, audio_format_id, container_type))
-        # download_media(url, ydl_opts_video_audio_remux(download_directory, video_format_id, audio_format_id, container_type))
-
-
+        st.session_state['input_container_for_codecs'] = ("mp4", "mkv", "webm", "ts", "avi", "mov", "ogg",)
 
 # Helpers
 def is_supported_by_ytdlp(url: str):
@@ -209,13 +285,16 @@ def is_supported_by_ytdlp(url: str):
         return 0
 
 def download_media(url, ydl_opts):
+    # Button to cancel downloads
+    if st.button("Cancel Download", key="cancel_button"):
+        global cancel_flag
+        cancel_flag = True
     # download youtube media with configs
-    # add feature to cancel downloads
     with YoutubeDL(ydl_opts) as ydl:
         ydl.download(url)
 
 # Helpers - youtube download configurations
-def ydl_opts_best_audio_mka(download_directory):
+def ydl_opts_best_audio_mka():
     # Python dictionary config for default youtube audio download
     output = {
         "format": "bestaudio",                 # Download best quality (audio)
@@ -227,32 +306,30 @@ def ydl_opts_best_audio_mka(download_directory):
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
+        "cookiesfrombrowser": cookies,
         "progress_hooks": [
-            lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
+             st_progress_hook,
         ]
     }
     return output
 
-def ydl_opts_best_video_audio_mkv(download_directory):
+def ydl_opts_best_video_audio_mkv():
     # Python dictionary config for default youtube video audio download
     output = {
-        "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
+        "format": "bestvideo+bestaudio",       # Download best quality (video + audio)
         "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),          # File name and extension
-        "postprocessors": [{
-            "key": "FFmpegVideoRemuxer",
-            "preferedformat": "mkv",
-        }],
         "merge_output_format": "mkv",               # Container format
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
+        "cookiesfrombrowser": cookies,
         "progress_hooks": [
-            lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
-        ]
+            st_progress_hook,
+        ] # lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
     }
     return output
 
-def ydl_opts_thumbnail(download_directory):
+def ydl_opts_thumbnail():
     # Python dictionary config for youtube thumbnail download
     output = {
         "skip_download": True,                      # Don't download the video
@@ -261,13 +338,14 @@ def ydl_opts_thumbnail(download_directory):
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
+        "cookiesfrombrowser": cookies,
         "progress_hooks": [
-            lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
+            st_progress_hook,
         ]
     }
     return output
 
-def ydl_opts_audio_remux(download_directory, audio_format_id, container_type):
+def ydl_opts_audio_remux(audio_format_id, container_type):
     # Python dictionary config for remux youtube audio download
     output = {
         "format": str(audio_format_id),                 # Download best quality (audio)
@@ -279,31 +357,30 @@ def ydl_opts_audio_remux(download_directory, audio_format_id, container_type):
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
+        "cookiesfrombrowser": cookies,
         "progress_hooks": [
-            lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
+            st_progress_hook,
         ]
     }
     return output
 
-def ydl_opts_video_audio_remux(download_directory, video_format_id, audio_format_id, container_type):
+def ydl_opts_video_audio_remux(video_format_id, audio_format_id, container_type):
     # Python dictionary config for remux youtube video audio download
     output = {
         "format": str(video_format_id+"+"+audio_format_id),                 # Download best quality (audio)
         "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),              # File name and extension
-        "postprocessors": [{
-            "key": "FFmpegVideoRemuxer",
-            "preferedformat": str(container_type),
-        }],
+        "merge_output_format": str(container_type),
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
+        "cookiesfrombrowser": cookies,
         "progress_hooks": [
-            lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
+            st_progress_hook,
         ]
     }
     return output
 
-def ydl_opts_twitter_video_audio(download_directory):
+def ydl_opts_twitter_video_audio():
     # Python dictionary config for twitter video download
     output = {
         "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
@@ -311,8 +388,9 @@ def ydl_opts_twitter_video_audio(download_directory):
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
+        "cookiesfrombrowser": cookies,
         "progress_hooks": [
-            lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
+            st_progress_hook,
         ]
     }
     return output
@@ -358,8 +436,7 @@ def view_media_codec_list(url):
             } for f in formats])
         
         st.subheader("Available Formats")
-        st.write(url_type + " URL")
-        st.table(data_list.set_index(data_list.columns[0])) # Sets first column as index column
+        st.write(url_type + " URL") 
         st.success("Info Obtained")
         return data_list
 
@@ -392,7 +469,15 @@ def view_tutorial_expander():
         )
         st.table(audio_codec_container_table.set_index(audio_codec_container_table.columns[0])) # Sets first column as index column
         
-        
+def st_progress_hook(d):
+    global cancel_flag
+    if cancel_flag:
+        raise Exception("Download canceled")
+    if d['status'] == 'downloading':
+        total = d.get('total_bytes') or d.get('total_bytes_estimate')
+        downloaded = d.get('downloaded_bytes', 0)
+        if total:
+            progress_bar.progress(downloaded / total)
 
 
 if __name__ == "__main__":
