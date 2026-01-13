@@ -56,7 +56,7 @@ def main():
     # Options for download mode
     encoding_config_list = {
         0: "Default",
-        1: "Remux",
+        1: "Remux(NoCookies)",
         2: "Re-encode",
         3: "Thumbnail",
         4: "Batch(Default)",
@@ -297,36 +297,52 @@ def download_media(url, ydl_opts):
 def ydl_opts_best_audio_mka():
     # Python dictionary config for default youtube audio download
     output = {
-        "format": "bestaudio",                 # Download best quality (audio)
-        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),              # File name and extension
-        "postprocessors": [{
-            "key": "FFmpegVideoRemuxer",
-            "preferedformat": "mka",
-        }],
-        "noplaylist": True,                         # Only download single video
-        "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
-        "quiet": False,                             # Show progress
+        # "format": "bestaudio",
+        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),
+        "noplaylist": True,
+        "ffmpeg_location": ffmpeg.get_ffmpeg_exe(),
+        "quiet": False,
         "cookiesfrombrowser": cookies,
         "progress_hooks": [
              st_progress_hook,
         ]
     }
+    if (cookies == None):
+        output["format"] = "bestaudio"
+        output["postprocessors"] = [{
+            "key": "FFmpegVideoRemuxer",
+            "preferedformat": "mka",
+        }]
+    else:
+        output["format"] = "best"
+        output["postprocessors"] = [{
+            "key": "FFmpegVideoRemuxer",
+            "preferedformat": "mka",
+        }]
     return output
 
 def ydl_opts_best_video_audio_mkv():
     # Python dictionary config for default youtube video audio download
     output = {
-        "format": "bestvideo+bestaudio",       # Download best quality (video + audio)
-        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),          # File name and extension
-        "merge_output_format": "mkv",               # Container format
-        "noplaylist": True,                         # Only download single video
-        "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
-        "quiet": False,                             # Show progress
+        # "format": "bestvideo+bestaudio",
+        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),
+        "noplaylist": True,
+        "ffmpeg_location": ffmpeg.get_ffmpeg_exe(),
+        "quiet": False,
         "cookiesfrombrowser": cookies,
         "progress_hooks": [
             st_progress_hook,
         ] # lambda d: print(f"{d['_percent_str']} {d['_eta_str']} remaining") if d['status'] == 'downloading' else None
     }
+    if (cookies == None):
+        output["format"] = "bestvideo+bestaudio"
+        output["merge_output_format"] = "mkv"
+    else:
+        output["format"] = "best"
+        output["postprocessors"] = [{
+            "key": "FFmpegVideoRemuxer",
+            "preferedformat": "mkv",
+        }]
     return output
 
 def ydl_opts_thumbnail():
@@ -349,7 +365,7 @@ def ydl_opts_audio_remux(audio_format_id, container_type):
     # Python dictionary config for remux youtube audio download
     output = {
         "format": str(audio_format_id),                 # Download best quality (audio)
-        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),              # File name and extension
+        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),# File name and extension
         "postprocessors": [{
             "key": "FFmpegVideoRemuxer",
             "preferedformat": str(container_type),
@@ -367,8 +383,8 @@ def ydl_opts_audio_remux(audio_format_id, container_type):
 def ydl_opts_video_audio_remux(video_format_id, audio_format_id, container_type):
     # Python dictionary config for remux youtube video audio download
     output = {
-        "format": str(video_format_id+"+"+audio_format_id),                 # Download best quality (audio)
-        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),              # File name and extension
+        "format": str(video_format_id+"+"+audio_format_id),         # Download best quality (audio)
+        "outtmpl": str(download_directory / "%(title).80s.%(ext)s"),# File name and extension
         "merge_output_format": str(container_type),
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
@@ -444,7 +460,7 @@ def view_media_codec_list(url):
 def view_tutorial_expander():
     # General info and tips on how to use this program and what to expect
     with st.expander("Tutorial & Guide"):
-        st.write("Encode Setting (Default) will use a .mka container for audio and a .mkv container for videos, while choosing the highest bitrate/resolution quality")
+        st.write("Encode Setting (Default) will use a .mka container for audio and a .mkv container for videos, while choosing the highest bitrate/resolution quality (with cookies on, quality and filetype might be worse or different)")
         st.write("Encode Setting (Remux) will allow you to choose specific video and audio codecs provided by youtube, as well as a container of your choosing, some audio/video codecs are seperate while some are combined, you can mix and match")
         st.write("Encode Setting (Re-encode) will download the highest quality audio and video and reencode to an audio/video codec and container of your choosing")
         st.write("Encode Setting (Batch) Download youtube playlists with Default setting")
@@ -453,6 +469,7 @@ def view_tutorial_expander():
         st.write("Try to maintain quality by remuxing instead of re-encoding, using existing audio/video codecs youtube provides with whatever container is compatible")
         st.write("Certain codecs and containers are not compatible with each other, any audio/video codecs can be merged as long as the container is compatible with both")
         st.markdown("<span style='background-color: darkred'>Some content maybe restricted and require an account, try using cookies from browser.  Recommended to use throwaway account, bannable maybe?</span>", unsafe_allow_html=True)
+        st.write("With cookies ON, youtube only provides codec streams that are muxed already, no separate audio/video streams, you may not have the best quality available, remuxing option is not available")
         st.write("#### Common Codecs Youtube uses")
         video_codec_table = pd.DataFrame(
             {
