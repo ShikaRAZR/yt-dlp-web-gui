@@ -22,7 +22,6 @@ cancel_flag = False
 # Web GUI yt-dlp
 def main():
     view_tutorial_expander()
-
     st.write("## Media Downloader (Beta)")
     version = importlib.metadata.version("yt-dlp")
 
@@ -398,9 +397,10 @@ def ydl_opts_video_audio_remux(video_format_id, audio_format_id, container_type)
 
 def ydl_opts_twitter_video_audio():
     # Python dictionary config for twitter video download
+    print("Cookie Print: "+str(cookies))
     output = {
         "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
-        "outtmpl": str(download_directory / "%(uploader)s - %(id)s - %(media_id)s.%(ext)s"), # File name and extension
+        "outtmpl": str(download_directory / "%(uploader_id)s - %(uploader)s - %(id)s - %(media_id)s.%(ext)s"), # File name and extension
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
@@ -470,6 +470,7 @@ def view_tutorial_expander():
         st.write("Certain codecs and containers are not compatible with each other, any audio/video codecs can be merged as long as the container is compatible with both")
         st.markdown("<span style='background-color: darkred'>Some content maybe restricted and require an account, try using cookies from browser.  Recommended to use throwaway account, bannable maybe?</span>", unsafe_allow_html=True)
         st.write("With cookies ON, youtube only provides codec streams that are muxed already, no separate audio/video streams, you may not have the best quality available, remuxing option is not available")
+        st.write("Grabbing cookies does not always work, it is very time sensitive and you may need to visit the actual page before downloading it.")
         st.write("#### Common Codecs Youtube uses")
         video_codec_table = pd.DataFrame(
             {
