@@ -190,10 +190,10 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
     st.write("is_valid_url: ", is_valid_url)
     
     # Ends function if invalid url
-    if (is_valid_url == 0):
+    if (is_valid_url == 0 and cookies is None):
         st.badge("Invalid URL or Cookies Required", color="red")
         return
-
+    
     with st.spinner("Processing..."):
         if(is_valid_url==1):
             # 0 Default Options
@@ -218,11 +218,10 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
                 download_media(url_input, ydl_opts_thumbnail())
                 st.success("Thumbnail Downloaded!")
                 st.write(download_directory)
-        
+
         # Other Options
         if (is_valid_url==2):
             if (encoding_config_selection==5 and media_config_option==0):
-                view_media_codec_list(url_input)
                 download_media(url_input, ydl_opts_twitter_video_audio())
                 st.success("(Other) Twitter Media Downloaded!")
                 st.write(download_directory)
@@ -267,14 +266,20 @@ def check_media_remux(url, media_config_option):
     if (media_config_option==1):
         st.session_state['input_container_for_codecs'] = ("mp4", "mkv", "webm", "ts", "avi", "mov", "ogg",)
 
-# Helpers
+
 def is_supported_by_ytdlp(url: str):
     # Check if yt-dlp supports the URL
     # Does not support = 0
     # Youtube = 1
     # Twitter = 2
+    print("COOKIE PRINT: "+str(cookies))
+    ydl_opts = {
+        "quiet": True,
+        "skip_download": True,
+        "cookiesfrombrowser": cookies,
+    }
     try:
-        with yt_dlp.YoutubeDL({'quiet': True}) as ydl:
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.extract_info(url, download=False)
         if("youtube" in url or "youtu.be" in url):
             return 1
@@ -285,7 +290,7 @@ def is_supported_by_ytdlp(url: str):
 
 def download_media(url, ydl_opts):
     # Button to cancel downloads
-    if st.button("Cancel Download", key="cancel_button"):
+    if st.button("Stop Download", key="cancel_button"):
         global cancel_flag
         cancel_flag = True
     # download youtube media with configs
@@ -397,7 +402,6 @@ def ydl_opts_video_audio_remux(video_format_id, audio_format_id, container_type)
 
 def ydl_opts_twitter_video_audio():
     # Python dictionary config for twitter video download
-    print("Cookie Print: "+str(cookies))
     output = {
         "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
         "outtmpl": str(download_directory / "%(uploader_id)s - %(uploader)s - %(id)s - %(media_id)s.%(ext)s"), # File name and extension
