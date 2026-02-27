@@ -228,7 +228,7 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
 
         # Notify User Error
         if ((encoding_config_selection==0 or encoding_config_selection==1 or encoding_config_selection==2 or encoding_config_selection==3 or encoding_config_selection==4) and is_valid_url != 1):
-            st.badge("Not a Youtube URL", color="red") 
+            st.badge("Not a Youtube URL, or Other Errors (Blocked IP Address, Invalid Cookies)", color="red") 
         if (encoding_config_selection==5 and is_valid_url != 2):
             st.badge("Not a Twitter URL", color="red")
             

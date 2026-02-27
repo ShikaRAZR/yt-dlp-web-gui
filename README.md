@@ -46,6 +46,7 @@ Web GUI interface for yt-dlp to download videos, audio, images
 - ~~cancel download~~
 - Personal Download location (config)
 - ask for cookies (cookies dont work for chromium and video error downloading with cookies activated)
+- Download reddit videos
 - ~~ffmpeg not installed (other-twitter)~~
 
 ## Modules
