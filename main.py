@@ -404,7 +404,7 @@ def ydl_opts_twitter_video_audio():
     # Python dictionary config for twitter video download
     output = {
         "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
-        "outtmpl": str(download_directory / "%(uploader_id)s - %(uploader)s - %(id)s - %(media_id)s.%(ext)s"), # File name and extension
+        "outtmpl": str(download_directory / "%(uploader_id)s - %(uploader)s - %(title).50s.%(ext)s"), # File name and extension
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
