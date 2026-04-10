@@ -1,3 +1,12 @@
+# /// script
+# dependencies = [
+#   "streamlit",
+#   "yt-dlp",
+#   "imageio-ffmpeg",
+#   "pandas",
+# ]
+# ///
+
 import streamlit as st
 import yt_dlp
 from yt_dlp import YoutubeDL

@@ -16,6 +16,7 @@ You can use these icons in streamlit segmented control input: https://fonts.goog
 
 https://youtu.be/gOMW_n2-2Mw Python lists, sets, and tuples explained  <br>
 https://youtu.be/EXIgjIBu4EU Learn Pandas in 30 Minutes - Python Pandas Tutorial  <br>
+https://github.com/astral-sh/uv  <br>
 
 ## FFMPEG Explained:
 ```
@@ -99,7 +100,7 @@ python -m venv venv
 > Activate Virtual Environment:
 
 ```
-source venv/bin/activate 
+source venv/bin/activate
 ```
 ```
 venv\Scripts\Activate.ps1
@@ -109,7 +110,10 @@ venv\Scripts\Activate.ps1
 ```
 streamlit run main.py
 ```
-
+run with uv (linux):
+```
+uv run --with streamlit --with yt-dlp --with imageio-ffmpeg --with pandas streamlit run main.py
+```
 <br>
 
 ---
