@@ -207,7 +207,7 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
         if(is_valid_url==1):
             # 0 Default Options
             if (encoding_config_selection==0 and media_config_option==0):
-                download_media(url_input, ydl_opts_best_audio_mka())
+                download_media(url_input, ydl_opts_best_audio_opus())
                 st.success("(Default) Audio Downloaded!")
                 st.write(download_directory)
             if (encoding_config_selection==0 and media_config_option==1):
@@ -307,7 +307,7 @@ def download_media(url, ydl_opts):
         ydl.download(url)
 
 # Helpers - youtube download configurations
-def ydl_opts_best_audio_mka():
+def ydl_opts_best_audio_opus():
     # Python dictionary config for default youtube audio download
     output = {
         # "format": "bestaudio",
@@ -324,13 +324,13 @@ def ydl_opts_best_audio_mka():
         output["format"] = "bestaudio"
         output["postprocessors"] = [{
             "key": "FFmpegVideoRemuxer",
-            "preferedformat": "mka",
+            "preferedformat": "opus",
         }]
     else:
         output["format"] = "best"
         output["postprocessors"] = [{
             "key": "FFmpegVideoRemuxer",
-            "preferedformat": "mka",
+            "preferedformat": "opus",
         }]
     return output
 
