@@ -92,7 +92,7 @@ def main():
     if (encoding_config_selection==4):
         media_config_list = {
             0: "Audio",
-            1: "Video",
+            1: "Video (Not Configured)",
             2: "Youtube Thumbnail"
         }
     if (encoding_config_selection==5):
@@ -112,7 +112,7 @@ def main():
     print("media_config_option: ", media_config_option)
 
     # Default, Thumbnail, Other
-    if(encoding_config_selection==0 or encoding_config_selection==3 or encoding_config_selection==5):
+    if(encoding_config_selection==0 or encoding_config_selection==3 or encoding_config_selection==4 or encoding_config_selection==5):
         if st.button("Download", key="main_button"):
             url_download_config(url_input, encoding_config_selection, media_config_option)
     
@@ -226,6 +226,16 @@ def url_download_config(url_input, encoding_config_selection, media_config_optio
             if (encoding_config_selection==3 and media_config_option==0):
                 download_media(url_input, ydl_opts_thumbnail())
                 st.success("Thumbnail Downloaded!")
+                st.write(download_directory)
+
+            # 4 Batch Option
+            if (encoding_config_selection==4 and media_config_option==0):
+                download_media(url_input, ydl_opts_best_audio_opus_batch())
+                st.success("Batch Audio Downloaded!")
+                st.write(download_directory)
+            if (encoding_config_selection==4 and media_config_option==2):
+                download_media(url_input, ydl_opts_thumbnail_batch())
+                st.success("Batch Thumbnail Downloaded!")
                 st.write(download_directory)
 
         # Other Options
@@ -356,6 +366,51 @@ def ydl_opts_best_video_audio_mkv():
             "key": "FFmpegVideoRemuxer",
             "preferedformat": "mkv",
         }]
+    return output
+
+def ydl_opts_best_audio_opus_batch():
+    # Python dictionary config for default youtube audio download
+    output = {
+        # "format": "bestaudio",
+        "outtmpl": str(download_directory / "%(autonumber)03d %(title).80s.%(ext)s"),
+        "autonumber_start": 1,
+        "noplaylist": True,
+        "ffmpeg_location": ffmpeg.get_ffmpeg_exe(),
+        "quiet": False,
+        "cookiesfrombrowser": cookies,
+        "progress_hooks": [
+             st_progress_hook,
+        ]
+    }
+    if (cookies == None):
+        output["format"] = "bestaudio"
+        output["postprocessors"] = [{
+            "key": "FFmpegVideoRemuxer",
+            "preferedformat": "opus",
+        }]
+    else:
+        output["format"] = "best"
+        output["postprocessors"] = [{
+            "key": "FFmpegVideoRemuxer",
+            "preferedformat": "opus",
+        }]
+    return output
+
+def ydl_opts_thumbnail_batch():
+    # Python dictionary config for youtube thumbnail download
+    output = {
+        "skip_download": True,                      # Don't download the video
+        "writethumbnail": True,                     # Download thumbnail
+        "outtmpl": str(download_directory / "%(autonumber)03d %(title).80s.%(ext)s"),          # File name and extension
+        "autonumber_start": 1,
+        "noplaylist": True,                         # Only download single video
+        "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
+        "quiet": False,                             # Show progress
+        "cookiesfrombrowser": cookies,
+        "progress_hooks": [
+            st_progress_hook,
+        ]
+    }
     return output
 
 def ydl_opts_thumbnail():
