@@ -373,7 +373,7 @@ def ydl_opts_best_audio_opus_batch():
     output = {
         # "format": "bestaudio",
         "outtmpl": str(download_directory / "%(autonumber)03d %(title).80s.%(ext)s"),
-        "autonumber_start": 1,
+        "autonumber_start": 18,
         "noplaylist": True,
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(),
         "quiet": False,
@@ -402,7 +402,7 @@ def ydl_opts_thumbnail_batch():
         "skip_download": True,                      # Don't download the video
         "writethumbnail": True,                     # Download thumbnail
         "outtmpl": str(download_directory / "%(autonumber)03d %(title).80s.%(ext)s"),          # File name and extension
-        "autonumber_start": 1,
+        "autonumber_start": 18,
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
         "quiet": False,                             # Show progress
@@ -468,6 +468,11 @@ def ydl_opts_twitter_video_audio():
     # Python dictionary config for twitter video download
     output = {
         "format": "bestvideo+bestaudio/best",       # Download best quality (video + audio)
+        "merge_output_format": "mkv",
+        "postprocessors": [{
+            "key": "FFmpegVideoRemuxer",
+            "preferedformat": "mkv",   # yes, yt-dlp spells it "prefered"
+        }],
         "outtmpl": str(download_directory / "%(uploader_id)s - %(uploader)s - %(title).50s.%(ext)s"), # File name and extension
         "noplaylist": True,                         # Only download single video
         "ffmpeg_location": ffmpeg.get_ffmpeg_exe(), # custom ffmpeg location
